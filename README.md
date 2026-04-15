@@ -1,7 +1,13 @@
 # Cockpit WebDAV Manager
 
+本工具是 [hacdias/webdav](https://github.com/hacdias/webdav) 的配套管理面板，需要先安装 WebDAV 服务端。
 将 [WebDAV-Server-Manager](https://github.com/Omoinemie/WebDAV-Server-Manager) 改造为 Cockpit 原生插件，完全去除 Python/Flask 依赖。
 
+<img width="2144" height="1247" alt="image" src="https://github.com/user-attachments/assets/4c6f82ac-0269-44be-9c2d-d890f2bbb286" />
+<img width="2144" height="1247" alt="image" src="https://github.com/user-attachments/assets/0fcd516c-2714-4d38-b50a-9f314a0e23e5" />
+<img width="2144" height="1247" alt="image" src="https://github.com/user-attachments/assets/464c259f-38d6-496a-b798-5a59a5c5f0e2" />
+<img width="2144" height="1247" alt="image" src="https://github.com/user-attachments/assets/def78617-43e9-48d8-a286-90d378940ead" />
+<img width="2144" height="1247" alt="image" src="https://github.com/user-attachments/assets/fd02b91e-08fd-46a8-8720-0fd52ac2d492" />
 ## 安装
 
 ### 从 .deb 安装
