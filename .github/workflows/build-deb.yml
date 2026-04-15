@@ -1,0 +1,71 @@
+name: Build .deb
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from manifest.json
+        id: version
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['package_version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building version: $VERSION"
+
+      - name: Build .deb package
+        run: |
+          PKG_NAME="cockpit-webdav-manager"
+          VERSION="${{ steps.version.outputs.version }}"
+          PKG_DIR="${PKG_NAME}_${VERSION}"
+
+          # Create package directory structure
+          mkdir -p "${PKG_DIR}/DEBIAN"
+          mkdir -p "${PKG_DIR}/usr/share/cockpit/webdav-manager"
+
+          # Copy plugin files
+          cp -r css js lang index.html manifest.json \
+            "${PKG_DIR}/usr/share/cockpit/webdav-manager/"
+
+          # Write control file
+          cat > "${PKG_DIR}/DEBIAN/control" << EOF
+          Package: ${PKG_NAME}
+          Version: ${VERSION}
+          Section: admin
+          Priority: optional
+          Architecture: all
+          Depends: cockpit (>= 270)
+          Maintainer: Omoinemie
+          Description: Cockpit plugin for WebDAV config management
+           A WebDAV server configuration manager plugin for Cockpit.
+           Manage users, rules, TLS, CORS, and file browsing
+           through the Cockpit web console.
+          EOF
+
+          # Build .deb
+          dpkg-deb --build "${PKG_DIR}"
+
+          # Rename for release
+          mv "${PKG_DIR}.deb" "${PKG_NAME}_${VERSION}_all.deb"
+          echo "Built: ${PKG_NAME}_${VERSION}_all.deb"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          body: |
+            ## Cockpit WebDAV Manager v${{ steps.version.outputs.version }}
+
+            ### Install
+            ```bash
+            sudo dpkg -i cockpit-webdav-manager_${{ steps.version.outputs.version }}_all.deb
+            sudo systemctl restart cockpit
+            ```
+          files: cockpit-webdav-manager_*_all.deb
