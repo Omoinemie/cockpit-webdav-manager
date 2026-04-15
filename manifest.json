@@ -1,0 +1,16 @@
+{
+    "version": 0,
+    "package_version": "0.1.0",
+    "name": "webdav-manager",
+    "requires": {
+        "cockpit": "270"
+    },
+    "menu": {
+        "index": {
+            "label": "WebDAV Manager",
+            "order": 100,
+            "path": "index.html"
+        }
+    },
+    "content-security-policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval'"
+}
