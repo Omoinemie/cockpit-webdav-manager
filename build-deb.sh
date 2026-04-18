@@ -1,40 +1,72 @@
 #!/bin/bash
-# Local .deb build script
-set -e
+# Local .deb build script for cockpit-webdav-manager
+set -euo pipefail
 
+# ── Config ──
 PKG_NAME="cockpit-webdav-manager"
-VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['package_version'])")
-PKG_DIR="${PKG_NAME}_${VERSION}"
+PLUGIN_NAME="webdav-manager"          # install dir: /usr/share/cockpit/webdav-manager
+MANIFEST="manifest.json"
 
-echo "Building ${PKG_NAME} ${VERSION}..."
+# ── Preflight ──
+[[ -f "$MANIFEST" ]] || { echo "Error: $MANIFEST not found"; exit 1; }
 
-# Clean
-rm -rf "${PKG_DIR}" "${PKG_NAME}_${VERSION}_all.deb"
+VERSION=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['package_version'])" "$MANIFEST")
+ARCH="all"
+DEB_FILE="${PKG_NAME}_${VERSION}_${ARCH}.deb"
+STAGING="${PLUGIN_NAME}_${VERSION}"   # temp dir uses short name, no "cockpit"
 
-# Create package structure
-mkdir -p "${PKG_DIR}/DEBIAN"
-mkdir -p "${PKG_DIR}/usr/share/cockpit/webdav-manager"
+echo "==> Building ${PKG_NAME} ${VERSION}"
 
-# Copy plugin files
-cp -r css js lang index.html manifest.json \
-  "${PKG_DIR}/usr/share/cockpit/webdav-manager/"
+# ── Clean ──
+rm -rf "$STAGING" "$DEB_FILE"
 
-# Write control file
-cat > "${PKG_DIR}/DEBIAN/control" << EOF
+# ─ Package structure ──
+PLUGIN_DEST="${STAGING}/usr/share/cockpit/${PLUGIN_NAME}"
+mkdir -p "${STAGING}/DEBIAN"
+mkdir -p "$PLUGIN_DEST"
+
+# ── Copy plugin files (auto-detect) ──
+for item in css js lang index.html manifest.json; do
+  [[ -e "$item" ]] || { echo "Error: $item not found"; exit 1; }
+  cp -r "$item" "$PLUGIN_DEST/"
+done
+
+# ─ DEBIAN/control ──
+cat > "${STAGING}/DEBIAN/control" << EOF
 Package: ${PKG_NAME}
 Version: ${VERSION}
 Section: admin
 Priority: optional
-Architecture: all
+Architecture: ${ARCH}
 Depends: cockpit (>= 270)
 Maintainer: Omoinemie
+Homepage: https://github.com/Omoinemie/cockpit-webdav-manager
 Description: Cockpit plugin for WebDAV config management
  A WebDAV server configuration manager plugin for Cockpit.
  Manage users, rules, TLS, CORS, and file browsing
  through the Cockpit web console.
 EOF
 
-# Build
-dpkg-deb --build "${PKG_DIR}"
-echo "Done: ${PKG_NAME}_${VERSION}_all.deb"
-echo "Install: sudo dpkg -i ${PKG_NAME}_${VERSION}_all.deb"
+# ── postinst: restart cockpit so it picks up the plugin ──
+cat > "${STAGING}/DEBIAN/postinst" << 'EOF'
+#!/bin/sh
+set -e
+if systemctl is-active --quiet cockpit.socket 2>/dev/null; then
+    systemctl restart cockpit.socket || true
+fi
+EOF
+chmod 755 "${STAGING}/DEBIAN/postinst"
+
+# ─ Fix permissions ──
+find "${STAGING}" -type d -exec chmod 0755 {} +
+find "${STAGING}" -type f -exec chmod 0644 {} +
+chmod 0755 "${STAGING}/DEBIAN"
+chmod 0644 "${STAGING}/DEBIAN/control"
+chmod 0755 "${STAGING}/DEBIAN/postinst"
+
+# ─ Build ─
+dpkg-deb --root-owner-group --build "$STAGING" "$DEB_FILE"
+
+echo "==> Done: ${DEB_FILE}"
+echo "    Size: $(du -h "$DEB_FILE" | cut -f1)"
+echo "    Install: sudo dpkg -i ${DEB_FILE}"
