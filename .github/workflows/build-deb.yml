@@ -1,28 +1,102 @@
-name: Build .deb
+name: Build & Release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (留空则读取 VERSION 文件)'
+        required: false
+        default: ''
+      create_release:
+        description: '是否发布到 Release (Yes/No)'
+        type: boolean
+        required: true
+        default: true
 
 permissions:
   contents: write
 
 jobs:
+  # ── 阶段 1: 确定版本号 ──
+  prepare:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      ver: ${{ steps.resolve.outputs.ver }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: resolve
+        run: |
+          INPUT_VER="${{ github.event.inputs.version }}"
+
+          # 尝试读取 VERSION 文件
+          if [ -f VERSION ]; then
+            FILE_VER=$(cat VERSION | tr -d '[:space:]')
+          else
+            FILE_VER=""
+          fi
+
+          if [ -n "$INPUT_VER" ]; then
+            # 手动输入优先，校验格式
+            VER="$INPUT_VER"
+            if ! echo "$VER" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::版本号格式无效: $VER (需要 x.y.z)"
+              exit 1
+            fi
+            echo "$VER" > VERSION
+            echo "ver=${VER}" >> "$GITHUB_OUTPUT"
+            echo "📌 使用手动版本: $VER (VERSION 文件已更新)"
+          elif [ -n "$FILE_VER" ]; then
+            VER="$FILE_VER"
+            echo "ver=${VER}" >> "$GITHUB_OUTPUT"
+            echo "📌 使用 VERSION 文件版本: $VER"
+          else
+            # 都没有，从 manifest.json 读取
+            VER=$(python3 -c "import json; print(json.load(open('manifest.json'))['package_version'])")
+            echo "ver=${VER}" >> "$GITHUB_OUTPUT"
+            echo "📌 使用 manifest.json 版本: $VER"
+          fi
+
+      - name: Sync version to manifest.json
+        run: |
+          VER="${{ steps.resolve.outputs.ver }}"
+          python3 -c "
+          import json
+          with open('manifest.json', 'r') as f:
+              data = json.load(f)
+          data['package_version'] = '${VER}'
+          with open('manifest.json', 'w') as f:
+              json.dump(data, f, indent=4)
+              f.write('\n')
+          "
+          echo "✅ manifest.json package_version 已更新为 ${VER}"
+
+      - name: Commit version bump
+        if: ${{ github.event.inputs.version != '' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION manifest.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: bump version to ${{ steps.resolve.outputs.ver }}"
+          git push
+
+  # ── 阶段 2: 构建 .deb ──
   build:
+    name: Build .deb
+    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract version from manifest.json
-        id: version
-        run: |
-          VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['package_version'])")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building version: $VERSION"
-
       - name: Build .deb package
         run: |
           PKG_NAME="cockpit-webdav-manager"
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ needs.prepare.outputs.ver }}"
           PKG_DIR="${PKG_NAME}_${VERSION}"
 
           # Create package directory structure
@@ -55,17 +129,37 @@ jobs:
           mv "${PKG_DIR}.deb" "${PKG_NAME}_${VERSION}_all.deb"
           echo "Built: ${PKG_NAME}_${VERSION}_all.deb"
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: cockpit-webdav-manager_*_all.deb
+
+  # ── 阶段 3: 发布 Release ──
+  release:
+    name: Create Release
+    needs: [prepare, build]
+    if: ${{ github.event.inputs.create_release == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-package
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
+          tag_name: v${{ needs.prepare.outputs.ver }}
+          name: v${{ needs.prepare.outputs.ver }}
           body: |
-            ## Cockpit WebDAV Manager v${{ steps.version.outputs.version }}
+            ## Cockpit WebDAV Manager v${{ needs.prepare.outputs.ver }}
 
             ### Install
             ```bash
-            sudo dpkg -i cockpit-webdav-manager_${{ steps.version.outputs.version }}_all.deb
+            sudo dpkg -i cockpit-webdav-manager_${{ needs.prepare.outputs.ver }}_all.deb
             sudo systemctl restart cockpit
             ```
           files: cockpit-webdav-manager_*_all.deb
