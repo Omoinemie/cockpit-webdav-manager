@@ -35,7 +35,12 @@ Manage users, rules, TLS, CORS, and file browsing through the Cockpit web consol
 
 ### Screenshots
 
-> _Add screenshots here_
+<img width="1964" height="1362" alt="image" src="https://github.com/user-attachments/assets/1296270f-5aaa-4aa6-874a-d5595afe8db5" />
+<img width="1972" height="1373" alt="image" src="https://github.com/user-attachments/assets/bda7ebac-5c31-4233-ac4e-d4587b6cd6f0" />
+<img width="1972" height="1372" alt="image" src="https://github.com/user-attachments/assets/a52118e9-ee51-4b35-86e1-5b98d5df8453" />
+<img width="1970" height="1372" alt="image" src="https://github.com/user-attachments/assets/8a594471-1dd4-4018-bad4-c6cf45cfc8c0" />
+<img width="1971" height="1369" alt="image" src="https://github.com/user-attachments/assets/da8907b3-de80-413d-b4cb-66c36a4735c6" />
+
 
 ### Requirements
 
