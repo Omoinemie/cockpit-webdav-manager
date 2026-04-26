@@ -61,9 +61,11 @@ jobs:
             echo "📌 使用 manifest.json 版本: $VER"
           fi
 
-      - name: Sync version to manifest.json
+      - name: Sync version to manifest.json and index.html
         run: |
           VER="${{ steps.resolve.outputs.ver }}"
+
+          # 更新 manifest.json
           python3 -c "
           import json
           with open('manifest.json', 'r') as f:
@@ -73,14 +75,18 @@ jobs:
               json.dump(data, f, indent=4)
               f.write('\n')
           "
-          echo "✅ manifest.json package_version 已更新为 ${VER}"
+          echo "✅ manifest.json package_version → ${VER}"
+
+          # 更新 index.html footer 版本号
+          sed -i 's|<span id="footerVersion">[^<]*</span>|<span id="footerVersion">'"${VER}"'</span>|' index.html
+          echo "✅ index.html footerVersion → ${VER}"
 
       - name: Commit version bump
         if: ${{ github.event.inputs.version != '' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add VERSION manifest.json
+          git add VERSION manifest.json index.html
           git diff --staged --quiet && exit 0
           git commit -m "chore: bump version to ${{ steps.resolve.outputs.ver }}"
           git push
@@ -95,39 +101,10 @@ jobs:
 
       - name: Build .deb package
         run: |
-          PKG_NAME="cockpit-webdav-manager"
-          VERSION="${{ needs.prepare.outputs.ver }}"
-          PKG_DIR="${PKG_NAME}_${VERSION}"
-
-          # Create package directory structure
-          mkdir -p "${PKG_DIR}/DEBIAN"
-          mkdir -p "${PKG_DIR}/usr/share/cockpit/webdav-manager"
-
-          # Copy plugin files
-          cp -r css js lang index.html manifest.json \
-            "${PKG_DIR}/usr/share/cockpit/webdav-manager/"
-
-          # Write control file
-          cat > "${PKG_DIR}/DEBIAN/control" << EOF
-          Package: ${PKG_NAME}
-          Version: ${VERSION}
-          Section: admin
-          Priority: optional
-          Architecture: all
-          Depends: cockpit (>= 270)
-          Maintainer: Omoinemie
-          Description: Cockpit plugin for WebDAV config management
-           A WebDAV server configuration manager plugin for Cockpit.
-           Manage users, rules, TLS, CORS, and file browsing
-           through the Cockpit web console.
-          EOF
-
-          # Build .deb
-          dpkg-deb --build "${PKG_DIR}"
-
-          # Rename for release
-          mv "${PKG_DIR}.deb" "${PKG_NAME}_${VERSION}_all.deb"
-          echo "Built: ${PKG_NAME}_${VERSION}_all.deb"
+          # 确保 VERSION 文件存在（prepare 阶段已写入）
+          echo "${{ needs.prepare.outputs.ver }}" > VERSION
+          chmod +x build-deb.sh
+          ./build-deb.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
