@@ -25,10 +25,20 @@ PLUGIN_DEST="${STAGING}/usr/share/cockpit/${PLUGIN_NAME}"
 mkdir -p "${STAGING}/DEBIAN"
 mkdir -p "$PLUGIN_DEST"
 
-# ── Copy plugin files (auto-detect) ──
-for item in css js lang index.html manifest.json; do
-  [[ -e "$item" ]] || { echo "Error: $item not found"; exit 1; }
-  cp -r "$item" "$PLUGIN_DEST/"
+# ── Copy plugin files ──
+# Support both flat (css/js/) and nested (static/css/static/js/) layouts
+cp index.html "$PLUGIN_DEST/"
+cp manifest.json "$PLUGIN_DEST/"
+
+if [[ -d "static" ]]; then
+    cp -r static "$PLUGIN_DEST/"
+fi
+if [[ -d "lang" ]]; then
+    cp -r lang "$PLUGIN_DEST/"
+fi
+# Legacy flat layout fallback
+for item in css js; do
+    [[ -d "$item" ]] && cp -r "$item" "$PLUGIN_DEST/"
 done
 
 # ─ DEBIAN/control ──

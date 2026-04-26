@@ -1,6 +1,6 @@
 {
     "version": 0,
-    "package_version": "0.1.1",
+    "package_version": "0.2.6",
     "name": "webdav-manager",
     "requires": {
         "cockpit": "270"
