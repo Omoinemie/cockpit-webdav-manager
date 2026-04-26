@@ -7,10 +7,40 @@ PKG_NAME="cockpit-webdav-manager"
 PLUGIN_NAME="webdav-manager"          # install dir: /usr/share/cockpit/webdav-manager
 MANIFEST="manifest.json"
 
-# ── Preflight ──
-[[ -f "$MANIFEST" ]] || { echo "Error: $MANIFEST not found"; exit 1; }
+# ── Version resolution (VERSION file > manifest.json) ──
+VERSION=""
+if [[ -f "VERSION" ]]; then
+    VERSION=$(cat VERSION | tr -d '[:space:]')
+fi
 
-VERSION=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['package_version'])" "$MANIFEST")
+if [[ -z "$VERSION" ]]; then
+    [[ -f "$MANIFEST" ]] || { echo "Error: $MANIFEST not found"; exit 1; }
+    VERSION=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['package_version'])" "$MANIFEST")
+fi
+
+if [[ -z "$VERSION" ]]; then
+    echo "Error: cannot determine version (no VERSION file and no package_version in $MANIFEST)"
+    exit 1
+fi
+
+echo "==> Version: $VERSION (from ${VERSION_SOURCE:-auto})"
+
+# Sync version to manifest.json
+python3 -c "
+import json, sys
+with open(sys.argv[1], 'r') as f:
+    data = json.load(f)
+data['package_version'] = sys.argv[2]
+with open(sys.argv[1], 'w') as f:
+    json.dump(data, f, indent=4)
+    f.write('\n')
+" "$MANIFEST" "$VERSION"
+
+# Sync version to index.html footer
+if [[ -f "index.html" ]]; then
+    sed -i "s|<span id=\"footerVersion\">[^<]*</span>|<span id=\"footerVersion\">${VERSION}</span>|" index.html
+fi
+
 ARCH="all"
 DEB_FILE="${PKG_NAME}_${VERSION}_${ARCH}.deb"
 STAGING="${PLUGIN_NAME}_${VERSION}"   # temp dir uses short name, no "cockpit"
