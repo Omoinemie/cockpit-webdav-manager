@@ -423,7 +423,6 @@
         if (cfgEl) cfgEl.textContent = ApiBridge.getConfigPath() || I18n.t('hint_set_config_path');
         // Update footer version
         var fvEl = document.getElementById('footerVersion');
-        if (fvEl) fvEl.textContent = '0.2.3';
     }
 
     // ─── Custom Selects (Settings Modal) ───
