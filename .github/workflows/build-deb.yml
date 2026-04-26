@@ -7,6 +7,10 @@ on:
         description: '版本号 (留空则读取 VERSION 文件)'
         required: false
         default: ''
+      changelog:
+        description: '更新日志 (可选，支持多行)'
+        required: false
+        default: ''
       create_release:
         description: '是否发布到 Release (Yes/No)'
         type: boolean
@@ -111,17 +115,32 @@ jobs:
         with:
           name: deb-package
 
+      - name: Build release body
+        id: body
+        run: |
+          VER="${{ needs.prepare.outputs.ver }}"
+          CL="${{ github.event.inputs.changelog }}"
+
+          BODY="## Cockpit WebDAV Manager v${VER}"$'\n\n'
+
+          if [ -n "$CL" ]; then
+            BODY+="### 更新日志"$'\n'
+            BODY+="${CL}"$'\n\n'
+          fi
+
+          BODY+="### Install"$'\n'
+          BODY+='```bash'$'\n'
+          BODY+="sudo dpkg -i cockpit-webdav-manager_${VER}_all.deb"$'\n'
+          BODY+="sudo systemctl restart cockpit"$'\n'
+          BODY+='```'$'\n'
+
+          # 写入文件避免特殊字符问题
+          echo "$BODY" > /tmp/release_body.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.prepare.outputs.ver }}
           name: v${{ needs.prepare.outputs.ver }}
-          body: |
-            ## Cockpit WebDAV Manager v${{ needs.prepare.outputs.ver }}
-
-            ### Install
-            ```bash
-            sudo dpkg -i cockpit-webdav-manager_${{ needs.prepare.outputs.ver }}_all.deb
-            sudo systemctl restart cockpit
-            ```
+          body_path: /tmp/release_body.md
           files: cockpit-webdav-manager_*_all.deb
