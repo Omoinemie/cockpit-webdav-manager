@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebDAV Manager</title>
-    <link rel="stylesheet" href="static/css/style.css">
-    <!-- Theme flash fix -->
+    <title data-i18n="appName">WebDAV Manager</title>
+    <link href="static/css/style.css" rel="stylesheet">
+    <link href="static/css/aplayer.min.css" rel="stylesheet">
+    <link href="static/css/dplayer.min.css" rel="stylesheet">
+    <style>
+        /* Critical: prevent flash when saved layout is 'top' */
+        body.menu-top .sidebar { display: none !important; }
+        body.menu-top .sidebar-overlay { display: none !important; }
+        body.menu-top .hamburger-btn { display: none !important; }
+        body.menu-top .main-content { margin-left: 0 !important; }
+        body.menu-top .app-footer { left: 0 !important; }
+        body.menu-top .top-menu-row { display: block !important; }
+    </style>
+    <script src="../base1/cockpit.js"></script>
     <script>
+    // Theme flash fix
     (function(){
         var t=localStorage.getItem('webdav_manager_settings');
         if(t){try{t=JSON.parse(t).theme||'light'}catch(e){t='light'}}
@@ -25,7 +37,7 @@
     <!-- ========== Top Navigation ========== -->
     <nav class="top-nav" id="topNav" aria-label="Top navigation">
         <div class="top-nav-left">
-            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu" title="Toggle sidebar">
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu" data-i18n-title="toggle_sidebar" title="Toggle sidebar" style="display:none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
                 </svg>
@@ -36,36 +48,14 @@
             </div>
         </div>
         <div class="top-nav-right">
-            <!-- Service Status (inline: icon + status + uptime) -->
-            <button class="icon-btn status-btn status-active" id="statusBtn" title="Service status" aria-label="Service status">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                </svg>
-                <div class="status-info">
-                    <span class="status-label" id="statusLabel" data-i18n="status_checking">Checking</span>
-                    <span class="status-uptime" id="statusUptime">--</span>
-                </div>
-            </button>
-            <!-- Restart (danger style to differentiate from refresh) -->
-            <button class="icon-btn btn-restart" id="restartBtn" onclick="doRestart()" data-i18n-title="btn_restart" title="Restart service" aria-label="Restart service">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-                </svg>
-            </button>
-            <!-- Save -->
-            <button class="icon-btn" id="saveBtn" onclick="saveCfg()" data-i18n-title="btn_save" title="Save" aria-label="Save config">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-                </svg>
-            </button>
-            <!-- Refresh (different icon: sync arrows) -->
+            <!-- Refresh -->
             <button class="icon-btn" id="refreshBtn" onclick="loadCfg()" data-i18n-title="btn_refresh" title="Refresh" aria-label="Refresh config">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2.5 11.5a10 10 0 0118.18-4.36L21.5 8"/><path d="M21.5 12.5a10 10 0 01-18.18 4.36L2.5 16"/>
                 </svg>
             </button>
             <!-- Layout Toggle -->
-            <button class="icon-btn" id="menuLayoutBtn" title="Toggle menu layout" aria-label="Toggle menu layout">
+            <button class="icon-btn" id="menuLayoutBtn" data-i18n-title="toggle_menu_layout" title="Toggle menu layout" aria-label="Toggle menu layout">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="layoutIconTop">
                     <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>
                 </svg>
@@ -74,13 +64,13 @@
                 </svg>
             </button>
             <!-- Language -->
-            <button class="icon-btn" id="langBtn" title="Language" aria-label="Switch language">
+            <button class="icon-btn" id="langBtn" data-i18n-title="lang_title" title="Language" aria-label="Switch language">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/>
                 </svg>
             </button>
             <!-- Theme -->
-            <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">
+            <button class="icon-btn" id="themeBtn" data-i18n-title="toggle_theme" title="Toggle theme" aria-label="Toggle theme">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="themeIconSun">
                     <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
                     <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -92,7 +82,7 @@
                 </svg>
             </button>
             <!-- Settings -->
-            <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Open settings">
+            <button class="icon-btn" id="settingsBtn" data-i18n-title="settings" title="Settings" aria-label="Open settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
                 </svg>
@@ -124,7 +114,10 @@
             <!-- ===== Server Settings ===== -->
             <div class="sec on" id="s-server">
                 <div class="card">
-                    <h3 data-i18n="card_network">Network Settings</h3>
+                    <div class="card-header">
+                        <h3 data-i18n="card_network">Network Settings</h3>
+                        <button class="btn btn-p btn-s" onclick="saveCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-i18n="btn_save">保存</span></button>
+                    </div>
                     <div class="grid2">
                         <div class="fg"><label data-i18n="label_address">Listen Address</label><input id="address" placeholder="0.0.0.0"><span class="hint" data-i18n="hint_address">0.0.0.0 = all interfaces</span></div>
                         <div class="fg"><label data-i18n="label_port">Port</label><input id="port" type="number" placeholder="6065" min="1" max="65535"></div>
@@ -133,14 +126,20 @@
                     </div>
                 </div>
                 <div class="card">
-                    <h3 data-i18n="card_features">Feature Toggles</h3>
+                    <div class="card-header">
+                        <h3 data-i18n="card_features">Feature Toggles</h3>
+                        <button class="btn btn-p btn-s" onclick="saveCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-i18n="btn_save">保存</span></button>
+                    </div>
                     <div class="trow"><label data-i18n="label_debug">Debug Mode</label><label class="sw"><input type="checkbox" id="debug"><span class="sl"></span></label></div>
                     <div class="trow"><label data-i18n="label_no_sniff">Disable MIME Sniffing</label><label class="sw"><input type="checkbox" id="noSniff"><span class="sl"></span></label></div>
                     <div class="trow"><label data-i18n="label_proxy">Behind Proxy</label><label class="sw"><input type="checkbox" id="behindProxy"><span class="sl"></span></label></div>
                     <div class="trow"><label data-i18n="label_no_password">No Password Mode</label><label class="sw"><input type="checkbox" id="noPassword"><span class="sl"></span></label></div>
                 </div>
                 <div class="card">
-                    <h3 data-i18n="card_permissions">Default Permissions</h3>
+                    <div class="card-header">
+                        <h3 data-i18n="card_permissions">Default Permissions</h3>
+                        <button class="btn btn-p btn-s" onclick="saveCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-i18n="btn_save">保存</span></button>
+                    </div>
                     <div class="grid2">
                         <div class="fg"><label data-i18n="label_default_perms">Default User Permissions</label>
                             <div class="pcs" id="defPerms">
@@ -164,7 +163,10 @@
             <!-- ===== TLS ===== -->
             <div class="sec" id="s-tls">
                 <div class="card">
-                    <h3 data-i18n="card_tls">TLS / SSL</h3>
+                    <div class="card-header">
+                        <h3 data-i18n="card_tls">TLS / SSL</h3>
+                        <button class="btn btn-p btn-s" onclick="saveCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-i18n="btn_save">保存</span></button>
+                    </div>
                     <div class="trow" style="margin-bottom:14px"><label data-i18n="label_enable_tls">Enable TLS</label><label class="sw"><input type="checkbox" id="tls"><span class="sl"></span></label></div>
                     <div class="grid2">
                         <div class="fg"><label data-i18n="label_cert">Certificate File</label><input id="cert" placeholder="cert.pem"></div>
@@ -176,7 +178,10 @@
             <!-- ===== CORS ===== -->
             <div class="sec" id="s-cors">
                 <div class="card">
-                    <h3 data-i18n="card_cors">CORS</h3>
+                    <div class="card-header">
+                        <h3 data-i18n="card_cors">CORS</h3>
+                        <button class="btn btn-p btn-s" onclick="saveCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-i18n="btn_save">保存</span></button>
+                    </div>
                     <div class="trow" style="margin-bottom:10px"><label data-i18n="label_enable_cors">Enable CORS</label><label class="sw"><input type="checkbox" id="corsOn"><span class="sl"></span></label></div>
                     <div class="trow" style="margin-bottom:14px"><label data-i18n="label_cors_creds">Allow Credentials</label><label class="sw"><input type="checkbox" id="corsCred"><span class="sl"></span></label></div>
                     <div class="fg full" style="margin-bottom:12px"><label data-i18n="label_cors_hosts">Allowed Origins</label><textarea id="corsHosts" rows="2" data-i18n-placeholder="placeholder_cors_hosts" placeholder="One per line, * = all"></textarea></div>
@@ -189,7 +194,10 @@
             <!-- ===== Logging ===== -->
             <div class="sec" id="s-logging">
                 <div class="card">
-                    <h3 data-i18n="card_logging">Logging</h3>
+                    <div class="card-header">
+                        <h3 data-i18n="card_logging">Logging</h3>
+                        <button class="btn btn-p btn-s" onclick="saveCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-i18n="btn_save">保存</span></button>
+                    </div>
                     <div class="grid2">
                         <div class="fg"><label data-i18n="label_log_format">Log Format</label><select id="logFmt"><option value="console">Console</option><option value="json">JSON</option></select></div>
                     </div>
@@ -197,14 +205,26 @@
                         <label style="font-size:0.82rem" data-i18n="label_log_colors">Colored Output</label>
                         <label class="sw"><input type="checkbox" id="logClr"><span class="sl"></span></label>
                     </div>
-                    <div class="fg full" style="margin-top:14px"><label data-i18n="label_log_outputs">Output Targets</label><div id="logOuts"></div></div>
+                    <div class="fg full" style="margin-top:14px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                            <label data-i18n="label_log_outputs">Output Targets</label>
+                            <button class="btn btn-o btn-s" onclick="addLogOutput()" data-i18n-title="btn_add_output_target" title="Add output target">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span data-i18n="btn_add">添加</span>
+                            </button>
+                        </div>
+                        <div id="logOuts"></div>
+                    </div>
                 </div>
             </div>
 
             <!-- ===== Global Rules ===== -->
             <div class="sec" id="s-rules">
                 <div class="card">
-                    <h3><span data-i18n="card_rules">Global Rules</span> <span class="badge" id="rCnt">0</span></h3>
+                    <div class="card-header">
+                        <h3><span data-i18n="card_rules">Global Rules</span> <span class="badge" id="rCnt">0</span></h3>
+                        <button class="btn btn-p btn-s" onclick="saveCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-i18n="btn_save">保存</span></button>
+                    </div>
                     <p style="font-size:0.82rem;color:var(--text-tertiary);margin-bottom:14px" data-i18n="hint_rules">Rules match from last to first</p>
                     <div id="rulesList"></div>
                     <button class="btn btn-p" onclick="openRule()" style="margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> <span data-i18n="btn_add_rule">Add Rule</span></button>
@@ -214,7 +234,10 @@
             <!-- ===== User Management ===== -->
             <div class="sec" id="s-users">
                 <div class="card">
-                    <h3><span data-i18n="card_users">User Management</span> <span class="badge" id="uCnt">0</span></h3>
+                    <div class="card-header">
+                        <h3><span data-i18n="card_users">User Management</span> <span class="badge" id="uCnt">0</span></h3>
+                        <button class="btn btn-p btn-s" onclick="saveCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-i18n="btn_save">保存</span></button>
+                    </div>
                     <div id="userList"></div>
                     <button class="btn btn-p" onclick="openUser()" style="margin-top:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> <span data-i18n="btn_add_user">Add User</span></button>
                 </div>
@@ -223,16 +246,13 @@
             <!-- ===== File Manager ===== -->
             <div class="sec" id="s-files">
                 <div class="card">
-                    <h3 data-i18n="card_files">File Browser</h3>
-                    <div class="fm-bar">
-                        <div class="fm-path">
-                            <span style="font-size:0.82rem;color:var(--text-tertiary);white-space:nowrap" data-i18n="label_directory_path">Directory:</span>
-                            <input id="fmP" value="/" onkeydown="if(event.key==='Enter')FM.go()">
-                            <button class="btn btn-o btn-s" onclick="FM.go()" data-i18n="btn_open">Open</button>
-                        </div>
-                        <button class="btn btn-o btn-s" onclick="FM.go()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> <span data-i18n="btn_refresh">Refresh</span></button>
+                    <div class="card-header">
+                        <h3 data-i18n="card_files">File Browser</h3>
                     </div>
-                    <div class="fm-bc" id="fmBc"></div>
+                    <div class="fm-path-container">
+                        <div class="fm-breadcrumb" id="fmBc" onclick="FileManager.editPath()"></div>
+                        <input id="fmP" value="/" style="display:none" onkeydown="if(event.key==='Enter')FileManager.go()" onblur="FileManager.viewPath()" placeholder="/">
+                    </div>
                     <div id="fmC" style="min-height:280px">
                         <div class="empty">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 10px;display:block;opacity:.5;width:48px;height:48px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
@@ -245,7 +265,9 @@
             <!-- ===== Raw YAML ===== -->
             <div class="sec" id="s-raw">
                 <div class="card">
-                    <h3 data-i18n="card_raw">Raw YAML</h3>
+                    <div class="card-header">
+                        <h3 data-i18n="card_raw">Raw YAML</h3>
+                    </div>
                     <p style="font-size:0.82rem;color:var(--text-tertiary);margin-bottom:12px" data-i18n="hint_raw">Directly edit YAML source</p>
                     <textarea class="ed" id="rawEd" spellcheck="false"></textarea>
                     <div style="margin-top:10px;display:flex;gap:8px">
@@ -255,8 +277,6 @@
                 </div>
             </div>
 
-            <!-- ===== Raw YAML ===== -->
-            <div class="sec" id="s-raw">
         </main>
     </div>
 
@@ -264,22 +284,67 @@
     <footer class="app-footer">
         <span>© Omoinemie</span>
         <span>|</span>
-        <span>v<span id="footerVersion">0.2.2</span></span>
+        <span style="font-size:0.75rem;"><span data-i18n="label_plugin_version">插件版本</span>：<span id="footerVersion" style="font-weight:600;">1.0.0</span></span>
+        <span>|</span>
+        <span style="font-size:0.75rem;"><span data-i18n="label_program_version">程序版本</span>：<span id="footerWebdavVersion" class="webdav-version-link" onclick="doUpdate()" data-i18n-title="title_update_webdav" title="点击更新WebDAV服务" style="font-weight:600;color:var(--info);cursor:pointer;">--</span></span>
+        <span>|</span>
+        <span id="footerServiceStatus" class="service-status-link" onclick="openServiceModal()" data-i18n-title="title_manage_service" title="点击管理服务" style="cursor:pointer;font-size:0.75rem;font-weight:600;">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusLabel" data-i18n="status_checking">Checking</span>
+            <span id="footerUptime" style="color:var(--text-tertiary);font-weight:400;margin-left:4px;">--</span>
+        </span>
         <span>|</span>
         <a href="https://github.com/Omoinemie/cockpit-webdav-manager" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">GitHub</a>
     </footer>
 
+    <!-- ========== Service Control Modal ========== -->
+    <div class="modal-overlay" id="serviceModal">
+        <div class="modal-dialog" style="max-width:320px;">
+            <div class="card-header">
+                <h3 id="serviceModalTitle" data-i18n="service_control">服务管理</h3>
+                <button class="btn btn-o btn-s" onclick="closeM('serviceModal')" data-i18n-title="btn_close" title="关闭">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+                <button class="btn btn-p" onclick="doStart()" id="btnServiceStart" style="width:100%;justify-content:center;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span data-i18n="service_start">启动服务</span>
+                </button>
+                <button class="btn btn-o" onclick="doStop()" id="btnServiceStop" style="width:100%;justify-content:center;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                    <span data-i18n="service_stop">停止服务</span>
+                </button>
+                <button class="btn btn-o" onclick="doRestart()" style="width:100%;justify-content:center;color:var(--warning);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                    <span data-i18n="service_restart">重启服务</span>
+                </button>
+            </div>
+            <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-light);">
+                <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-tertiary);">
+                    <span data-i18n="service_name_label">服务</span>
+                    <span id="serviceModalName" style="font-weight:600;color:var(--text-primary);">webdav</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== User Modal ========== -->
     <div class="modal-overlay" id="userMov">
         <div class="modal-dialog">
-            <h3 id="uMovTitle" data-i18n="modal_add_user">Add User</h3>
+            <div class="card-header">
+                <h3 id="uMovTitle" data-i18n="modal_add_user">Add User</h3>
+                <button class="btn btn-o btn-s" onclick="closeM('userMov')" data-i18n-title="btn_close" title="关闭">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
             <input type="hidden" id="uIdx" value="-1">
             <div class="fg"><label data-i18n="label_username">Username *</label><input id="muUser" data-i18n-placeholder="label_username" placeholder="Username"></div>
             <div class="fg"><label data-i18n="label_password">Password *</label>
                 <div class="pw-row"><input id="muPass" data-i18n-placeholder="placeholder_password" placeholder="plaintext or {bcrypt}$..."><button class="btn btn-o btn-s" onclick="genPw('muPass')" data-i18n-title="hint_pw_gen" title="Generate random"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></button><button class="btn btn-o btn-s" onclick="togPw('muPass')" title="Toggle visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                 <span class="hint" data-i18n="hint_pw_gen">Generate 24-char random password</span>
             </div>
-            <div class="fg"><label data-i18n="label_user_dir">User Directory (leave empty for default)</label><input id="muDir" data-i18n-placeholder="placeholder_user_dir" placeholder="/data/user"></div>
+            <div class="fg"><label data-i18n="label_user_dir">User Directory (empty = auto create)</label><input id="muDir" data-i18n-placeholder="placeholder_user_dir" placeholder="/data/user"></div>
             <div class="fg"><label data-i18n="label_user_perms">Permissions (leave empty for default)</label>
                 <div class="pcs" id="muP"><label class="pc" data-p="C"><input type="checkbox"><b>C</b></label><label class="pc" data-p="R"><input type="checkbox"><b>R</b></label><label class="pc" data-p="U"><input type="checkbox"><b>U</b></label><label class="pc" data-p="D"><input type="checkbox"><b>D</b></label></div>
             </div>
@@ -293,7 +358,12 @@
     <!-- ========== Rule Modal ========== -->
     <div class="modal-overlay" id="ruleMov">
         <div class="modal-dialog">
-            <h3 id="rMovTitle" data-i18n="modal_add_rule">Add Rule</h3>
+            <div class="card-header">
+                <h3 id="rMovTitle" data-i18n="modal_add_rule">Add Rule</h3>
+                <button class="btn btn-o btn-s" onclick="closeM('ruleMov')" data-i18n-title="btn_close" title="关闭">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
             <input type="hidden" id="rIdx" value="-1">
             <div class="fg"><label data-i18n="label_match_type">Match Type</label><select id="mrType" onchange="document.getElementById('mrPG').style.display=this.value==='path'?'':'none';document.getElementById('mrRG').style.display=this.value==='regex'?'':'none'">
                     <option value="path" data-i18n="opt_path">Path</option>
@@ -309,33 +379,15 @@
         </div>
     </div>
 
-    <!-- ========== Preview Overlay ========== -->
-    <div class="preview-overlay" id="previewOv">
-        <div class="preview-inner">
-            <div class="preview-topbar">
-                <div class="preview-topbar-left">
-                    <span id="pvIcon" style="font-size:18px"></span>
-                    <h3 id="pvTitle" data-i18n="preview_title">Preview</h3>
-                    <span class="preview-meta" id="pvMeta"></span>
-                </div>
-                <div class="preview-topbar-right">
-                    <a id="pvDl" class="btn btn-o btn-s" href="#" target="_blank" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="btn_download">Download</span></a>
-                    <button class="btn btn-o btn-s" onclick="Preview.close()" data-i18n-title="btn_close" title="Close (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-            </div>
-            <div class="preview-body" id="pvBody">
-                <div class="preview-loading">
-                    <div class="spinner"></div>
-                    <p style="color:var(--text-tertiary);font-size:0.88rem" data-i18n="loading">Loading...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== Settings Modal (Template) ========== -->
+    <!-- ========== Settings Modal ========== -->
     <div class="modal-overlay" id="settingsOverlay">
         <div class="modal" id="settingsModal" role="dialog" aria-labelledby="settingsTitle">
-            <h3 id="settingsTitle" data-i18n="settings">Settings</h3>
+            <div class="card-header">
+                <h3 id="settingsTitle" data-i18n="settings">Settings</h3>
+                <button class="btn btn-o btn-s" onclick="closeM('settingsOverlay')" data-i18n-title="btn_close" title="关闭">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
             <!-- UI Settings -->
             <div class="form-group">
                 <label data-i18n="settingTheme">Theme Mode</label>
@@ -399,19 +451,9 @@
             </div>
             <!-- Divider -->
             <div style="height:1px;background:var(--border-color);margin:18px 0;"></div>
-            <!-- WebDAV Plugin Settings (saves to /etc/cockpit/webdav-manager/settings.json) -->
-            <h4 style="font-size:0.88rem;font-weight:700;margin-bottom:14px;color:var(--text-primary);" data-i18n="card_settings">WebDAV Settings</h4>
-            <div class="form-group">
-                <label data-i18n="label_config_path">WebDAV Config Path</label>
-                <input type="text" id="setConfigPath" placeholder="/etc/webdav/config.yaml">
-            </div>
-            <div class="form-group">
-                <label data-i18n="label_service_name">Service Name</label>
-                <input type="text" id="setServiceName" placeholder="webdav">
-            </div>
             <div class="form-group">
                 <label data-i18n="label_file_root">File Manager Root Directory</label>
-                <input type="text" id="setFileRoot" placeholder="/var/lib/webdav">
+                <input type="text" id="setFileRoot" placeholder="/data">
             </div>
             <div class="btn-row">
                 <button class="btn btn-secondary" id="settingsReset" data-i18n="resetDefaults">Reset Defaults</button>
@@ -434,11 +476,33 @@
         </div>
     </div>
 
+    <!-- ========== Preview Overlay ========== -->
+    <div id="previewOv">
+        <div class="preview-inner">
+            <div class="preview-topbar">
+                <div class="preview-topbar-left">
+                    <span id="pvIcon"></span>
+                    <h3 id="pvTitle" data-i18n="preview_title">Preview</h3>
+                    <span id="pvMeta" style="color:var(--text-tertiary);font-size:0.82rem;"></span>
+                </div>
+                <div class="preview-topbar-right">
+                    <button class="btn btn-o btn-s" onclick="FileManager.copyPreviewContent()" data-i18n-title="btn_copy_content" title="复制内容">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    </button>
+                    <button class="btn btn-o btn-s" onclick="FileManager.closePreview()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="pvBody"></div>
+        </div>
+    </div>
+
     <!-- ========== Confirm Dialog ========== -->
     <div class="confirm-overlay" id="confirmOverlay">
         <div class="confirm-dialog">
-            <h3 id="confirmTitle">Confirm</h3>
-            <p id="confirmMsg">Are you sure?</p>
+            <h3 id="confirmTitle" data-i18n="btn_confirm">Confirm</h3>
+            <p id="confirmMsg" data-i18n="confirm_default_msg">Are you sure?</p>
             <div class="confirm-actions">
                 <button class="btn btn-o" id="confirmCancel" data-i18n="btn_cancel">Cancel</button>
                 <button class="btn btn-d" id="confirmOk" data-i18n="btn_confirm">Confirm</button>
@@ -449,29 +513,23 @@
     <!-- ========== Toast Container ========== -->
     <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
 
-    <!-- Cockpit API -->
-    <script src="../base1/cockpit.js"></script>
-    <!-- js-yaml -->
-    <script src="static/js/js-yaml.min.js"></script>
-    <!-- App modules -->
+    <!-- JS modules loaded in dependency order -->
     <script src="static/js/i18n.js"></script>
-    <script src="static/js/utils.js"></script>
+    <script src="static/js/state.js"></script>
+    <script src="static/js/theme.js"></script>
+    <script src="static/js/layout.js"></script>
+    <script src="static/js/toast.js"></script>
+    <script src="static/js/confirm.js"></script>
+    <script src="static/js/settings.js"></script>
+    <script src="static/js/menu.js"></script>
+    <script src="static/js/js-yaml.min.js"></script>
+    <script src="static/js/aplayer.min.js"></script>
+    <script src="static/js/dplayer.min.js"></script>
     <script src="static/js/api-bridge.js"></script>
-    <script src="static/js/file-preview.js"></script>
-    <script src="static/js/file-manager.js"></script>
+    <script src="static/js/webdav-config.js"></script>
+    <script src="static/js/webdav-users.js"></script>
+    <script src="static/js/webdav-rules.js"></script>
+    <script src="static/js/webdav-files.js"></script>
     <script src="static/js/app.js"></script>
-
-    <!-- Footer sync -->
-    <script>
-    (function(){
-        function syncFooter(){
-            var cp = document.getElementById('cfgPath');
-            var fp = document.getElementById('footerCfgPath');
-            if(cp && fp) fp.textContent = cp.textContent;
-        }
-        setInterval(syncFooter, 2000);
-        document.addEventListener('DOMContentLoaded', function(){ setTimeout(syncFooter, 1000); });
-    })();
-    </script>
 </body>
 </html>

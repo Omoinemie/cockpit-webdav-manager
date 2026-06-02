@@ -31,7 +31,9 @@ Manage users, rules, TLS, CORS, and file browsing through the Cockpit web consol
 - 📂 **File Browser** — Browse and preview files served by WebDAV directly in the UI
 - 📝 **Raw YAML** — Directly view and edit the underlying YAML configuration
 - 🌙 **Dark Mode** — Light / Dark / System theme with customizable accent colors
-- 🌐 **i18n** — English and 简体中文 interface
+- 🌐 **i18n** — English and 简体中文 interface, full internationalization coverage
+- ⚙️ **Service Control** — Start/stop/restart WebDAV service from the UI
+- 🔄 **Auto Update** — Check and install updates from GitHub directly
 
 ### Screenshots
 
@@ -122,11 +124,17 @@ Contributions are welcome! Feel free to open issues and pull requests.
 - 📂 **文件浏览** — 直接在界面中浏览和预览 WebDAV 服务的文件
 - 📝 **原始 YAML** — 直接查看和编辑底层 YAML 配置文件
 - 🌙 **暗色模式** — 亮色/暗色/跟随系统主题，支持自定义强调色
-- 🌐 **国际化** — English 和简体中文界面
+- 🌐 **国际化** — English 和简体中文界面，完整的国际化覆盖
+- ⚙️ **服务管理** — 在界面中启动/停止/重启 WebDAV 服务
+- 🔄 **自动更新** — 直接从 GitHub 检查并安装更新
 
 ### 截图
 
-> _在这里添加截图_
+<img width="1964" height="1362" alt="image" src="https://github.com/user-attachments/assets/1296270f-5aaa-4aa6-874a-d5595afe8db5" />
+<img width="1972" height="1373" alt="image" src="https://github.com/user-attachments/assets/bda7ebac-5c31-4233-ac4e-d4587b6cd6f0" />
+<img width="1972" height="1372" alt="image" src="https://github.com/user-attachments/assets/a52118e9-ee51-4b35-86e1-5b98d5df8453" />
+<img width="1970" height="1372" alt="image" src="https://github.com/user-attachments/assets/8a594471-1dd4-4018-bad4-c6cf45cfc8c0" />
+<img width="1971" height="1369" alt="image" src="https://github.com/user-attachments/assets/da8907b3-de80-413d-b4cb-66c36a4735c6" />
 
 ### 环境要求
 
@@ -169,7 +177,7 @@ sudo systemctl restart cockpit
 
 ### 配置说明
 
-插件管理一个 YAML 配置文件（默认：`etc/webdav/config.yaml`），可在 **设置 → WebDAV 配置路径** 中自定义。
+插件管理一个 YAML 配置文件（默认：`/etc/webdav/config.yaml`），可在 **设置 → WebDAV 配置路径** 中自定义。
 
 ### 构建与发布（CI/CD）
 

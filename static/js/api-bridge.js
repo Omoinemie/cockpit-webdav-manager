@@ -12,8 +12,8 @@ var ApiBridge = (function() {
 
     // ─── Service name and config path (overridden by settings) ───
     var _serviceName = 'webdav';
-    var _configPath = '/etc/webdav/config.yaml';
-    var _fileRoot = '/var/lib/webdav';
+    var _configPath = '/etc/webdav/webdav.yml';
+    var _fileRoot = '/data';
 
     // ─── Load settings on init ───
     var _settings = null;
@@ -22,13 +22,10 @@ var ApiBridge = (function() {
     function init() {
         _settingsReady = loadSettings().then(function(s) {
             _settings = s;
-            _serviceName = s.service_name || 'webdav';
-            _configPath = s.config_path || '';
-            _fileRoot = s.file_root || '/var/lib/webdav';
+            _fileRoot = s.file_root || '/data';
             return s;
         }).catch(function() {
             _settings = defaultSettings();
-            _configPath = '';
             return _settings;
         });
         return _settingsReady;
@@ -37,9 +34,7 @@ var ApiBridge = (function() {
     function defaultSettings() {
         return {
             language: 'en',
-            config_path: '',
-            service_name: 'webdav',
-            file_root: '/var/lib/webdav'
+            file_root: '/data'
         };
     }
 
@@ -73,9 +68,7 @@ var ApiBridge = (function() {
     function saveSettings(settings) {
         return new Promise(function(resolve, reject) {
             _settings = settings;
-            _serviceName = settings.service_name || _serviceName;
-            _configPath = settings.config_path || _configPath;
-            _fileRoot = settings.file_root || _fileRoot;
+            _fileRoot = settings.file_root || '/data';
 
             // Ensure parent directory exists
             var dir = SETTINGS_FILE.substring(0, SETTINGS_FILE.lastIndexOf('/'));
@@ -111,14 +104,14 @@ var ApiBridge = (function() {
                 .then(function(content) {
                     file.close();
                     if (!content) {
-                        reject({ error: 'Config file not found: ' + _configPath, path: _configPath });
+                        reject({ error: t('err_config_not_found') + ': ' + _configPath, path: _configPath });
                         return;
                     }
                     try {
                         var parsed = jsyaml.load(content);
                         resolve({ config: parsed, path: _configPath, raw: content });
                     } catch (e) {
-                        reject({ error: 'YAML parse error: ' + e.message, path: _configPath });
+                        reject({ error: t('err_yaml_parse') + ': ' + e.message, path: _configPath });
                     }
                 })
                 .catch(function(err) {
@@ -142,7 +135,7 @@ var ApiBridge = (function() {
                     file.replace(yamlStr)
                         .then(function() {
                             file.close();
-                            resolve({ success: true, message: 'Config saved successfully' });
+                            resolve({ success: true, message: t('toast_saved') });
                         })
                         .catch(function(err) {
                             file.close();
@@ -177,7 +170,7 @@ var ApiBridge = (function() {
             try {
                 jsyaml.load(content);
             } catch (e) {
-                reject({ error: 'Invalid YAML: ' + e.message });
+                reject({ error: t('toast_yaml_error') + ': ' + e.message });
                 return;
             }
             // Backup
@@ -235,11 +228,62 @@ var ApiBridge = (function() {
         return new Promise(function(resolve, reject) {
             cockpit.spawn(['systemctl', 'restart', _serviceName], { superuser: 'require', err: 'message' })
                 .done(function() {
-                    resolve({ success: true, message: _serviceName + ' service restarted' });
+                    resolve({ success: true, message: t('toast_restart_success') });
                 })
                 .fail(function(err) {
-                    reject({ success: false, error: err.message || err.toString() || 'Restart failed' });
+                    reject({ success: false, error: err.message || err.toString() || t('toast_restart_failed') });
                 });
+        });
+    }
+
+    // ─── WebDAV 版本 ───
+    function getVersion() {
+        return new Promise(function(resolve) {
+            // 优先读取本地缓存
+            var file = cockpit.file('/etc/webdav/.version', { superuser: 'try' });
+            file.read()
+                .then(function(content) {
+                    file.close();
+                    var ver = (content || '').trim();
+                    if (ver) {
+                        resolve(ver);
+                    } else {
+                        // 缓存为空，调用脚本获取
+                        getVersionFromScript(resolve);
+                    }
+                })
+                .catch(function() {
+                    file.close();
+                    getVersionFromScript(resolve);
+                });
+        });
+    }
+
+    function getVersionFromScript(resolve) {
+        cockpit.spawn(['/usr/local/bin/webdav-manager', 'check-update'], { superuser: 'try', err: 'ignore' })
+            .done(function(output) {
+                try {
+                    var data = JSON.parse(output.trim());
+                    resolve(data.current || '--');
+                } catch (e) {
+                    resolve('--');
+                }
+            })
+            .fail(function() { resolve('--'); });
+    }
+
+    // ─── WebDAV 检查更新 ───
+    function checkUpdate() {
+        return new Promise(function(resolve) {
+            cockpit.spawn(['/usr/local/bin/webdav-manager', 'check-update'], { superuser: 'require', err: 'message' })
+                .done(function(output) {
+                    try {
+                        resolve(JSON.parse(output.trim()));
+                    } catch (e) {
+                        resolve(null);
+                    }
+                })
+                .fail(function() { resolve(null); });
         });
     }
 
@@ -261,7 +305,7 @@ var ApiBridge = (function() {
         return new Promise(function(resolve, reject) {
             var target = safePath(relPath);
             if (!target) {
-                reject({ error: 'Invalid path' });
+                reject({ error: t('err_invalid_path') });
                 return;
             }
 
@@ -302,7 +346,7 @@ var ApiBridge = (function() {
         return new Promise(function(resolve, reject) {
             var target = safePath(relPath);
             if (!target) {
-                reject({ error: 'Invalid path' });
+                reject({ error: t('err_invalid_path') });
                 return;
             }
 
@@ -338,6 +382,8 @@ var ApiBridge = (function() {
         // Service
         getServiceStatus: getServiceStatus,
         restartService: restartService,
+        getVersion: getVersion,
+        checkUpdate: checkUpdate,
         // Files
         listFiles: listFiles,
         downloadFile: downloadFile,
