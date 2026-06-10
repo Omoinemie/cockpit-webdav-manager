@@ -251,7 +251,7 @@ function formatDate(epoch) {
         go();
     }
 
-    // 文件预览
+    // 文件预览 - 使用 Cockpit fsread1 channel API 流式传输
     function showPreview(path, name, size) {
         var ov = document.getElementById('previewOv');
         var body = document.getElementById('pvBody');
@@ -268,11 +268,9 @@ function formatDate(epoch) {
         var safePath = path.replace(/^\/+/, '');
         var fullPath = getFileRoot() + '/' + safePath;
 
-        // 使用cockpit.file读取文件
-        var file = cockpit.file(fullPath, { superuser: 'try' });
-
         if (cat === 'code' || cat === 'text' || cat === 'unknown') {
-            // 文本/代码预览
+            // 文本/代码预览 - 使用 cockpit.file API
+            var file = cockpit.file(fullPath, { superuser: 'try' });
             file.read()
                 .then(function(content) {
                     file.close();
@@ -287,119 +285,61 @@ function formatDate(epoch) {
                     body.innerHTML = '<div class="empty"><p>' + t('err_load') + ': ' + e(err.toString()) + '</p></div>';
                 });
         } else if (cat === 'image') {
-            // 图片预览 - 使用binary模式读取后转base64
-            var imgFile = cockpit.file(fullPath, { superuser: 'try', binary: true });
-            imgFile.read()
-                .then(function(data) {
-                    imgFile.close();
-                    var ext = name.split('.').pop().toLowerCase();
-                    var mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', bmp: 'image/bmp' };
-                    var mime = mimeMap[ext] || 'image/png';
-                    // 转换为base64
-                    var bytes = new Uint8Array(data);
-                    var binary = '';
-                    for (var i = 0; i < bytes.length; i++) {
-                        binary += String.fromCharCode(bytes[i]);
-                    }
-                    var b64 = btoa(binary);
-                    body.innerHTML = '<div style="text-align:center;padding:20px"><img src="data:' + mime + ';base64,' + b64 + '" style="max-width:100%;max-height:70vh;border-radius:8px" alt="' + e(name) + '"></div>';
-                })
-                .catch(function(err) {
-                    imgFile.close();
-                    renderInfoBox(body, name, size, path);
+            // 图片预览 - 使用 fsread1 channel 流式传输
+            var ext = name.split('.').pop().toLowerCase();
+            var mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', bmp: 'image/bmp', ico: 'image/x-icon', avif: 'image/avif' };
+            var mime = mimeMap[ext] || 'image/png';
+            var streamUrl = createCockpitStreamUrl(fullPath, mime, size);
+            body.innerHTML = '<div style="text-align:center;padding:20px"><img src="' + streamUrl + '" style="max-width:100%;max-height:70vh;border-radius:8px" alt="' + e(name) + '"></div>';
+        } else if (cat === 'video') {
+            // 视频预览 - 使用 fsread1 channel 流式传输 + DPlayer
+            var ext = name.split('.').pop().toLowerCase();
+            var mimeMap = { mp4: 'video/mp4', webm: 'video/webm', ogg: 'video/ogg', mov: 'video/quicktime', avi: 'video/x-msvideo', mkv: 'video/x-matroska', m4v: 'video/mp4', '3gp': 'video/3gpp' };
+            var mime = mimeMap[ext] || 'video/mp4';
+            var streamUrl = createCockpitStreamUrl(fullPath, mime, size);
+            body.innerHTML = '<div id="dplayer-container" style="width:100%;height:100%;min-height:400px;"></div>';
+            try {
+                _dplayerInstance = new DPlayer({
+                    container: document.getElementById('dplayer-container'),
+                    video: {
+                        url: streamUrl,
+                        type: 'auto'
+                    },
+                    theme: '#6c5ce7'
                 });
-} else if (cat === 'video') {
-            // 视频预览 - 使用DPlayer
-            var vidFile = cockpit.file(fullPath, { superuser: 'try', binary: true });
-            vidFile.read()
-                .then(function(data) {
-                    vidFile.close();
-                    var ext = name.split('.').pop().toLowerCase();
-                    var mimeMap = { mp4: 'video/mp4', webm: 'video/webm', ogg: 'video/ogg', mov: 'video/quicktime' };
-                    var mime = mimeMap[ext] || 'video/mp4';
-                    var bytes = new Uint8Array(data);
-                    var binary = '';
-                    for (var i = 0; i < bytes.length; i++) {
-                        binary += String.fromCharCode(bytes[i]);
-                    }
-                    var b64 = btoa(binary);
-                    body.innerHTML = '<div id="dplayer-container" style="width:100%;height:100%;min-height:400px;"></div>';
-                    try {
-                        new DPlayer({
-                            container: document.getElementById('dplayer-container'),
-                            video: {
-                                url: 'data:' + mime + ';base64,' + b64,
-                                type: 'auto'
-                            },
-                            theme: '#6c5ce7'
-                        });
-                    } catch (err) {
-                        body.innerHTML = '<div style="text-align:center;padding:20px"><video controls style="max-width:100%;max-height:70vh;border-radius:8px"><source src="data:' + mime + ';base64,' + b64 + '" type="' + mime + '"></video></div>';
-                    }
-                })
-                .catch(function(err) {
-                    vidFile.close();
-                    renderInfoBox(body, name, size, path);
-                });
+            } catch (err) {
+                body.innerHTML = '<div style="text-align:center;padding:20px"><video controls style="max-width:100%;max-height:70vh;border-radius:8px"><source src="' + streamUrl + '" type="' + mime + '"></video></div>';
+            }
         } else if (cat === 'audio') {
-            // 音频预览 - 使用APlayer
-            var audFile = cockpit.file(fullPath, { superuser: 'try', binary: true });
-            audFile.read()
-                .then(function(data) {
-                    audFile.close();
-                    var ext = name.split('.').pop().toLowerCase();
-                    var mimeMap = { mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', flac: 'audio/flac', aac: 'audio/aac', m4a: 'audio/mp4' };
-                    var mime = mimeMap[ext] || 'audio/mpeg';
-                    var bytes = new Uint8Array(data);
-                    var binary = '';
-                    for (var i = 0; i < bytes.length; i++) {
-                        binary += String.fromCharCode(bytes[i]);
-                    }
-                    var b64 = btoa(binary);
-                    body.innerHTML = '<div id="aplayer-container" style="padding:20px;"></div>';
-                    try {
-                        new APlayer({
-                            container: document.getElementById('aplayer-container'),
-                            audio: [{
-                                name: name,
-                                artist: 'WebDAV',
-                                url: 'data:' + mime + ';base64,' + b64,
-                                type: 'auto'
-                            }],
-                            theme: '#6c5ce7'
-                        });
-                    } catch (err) {
-                        body.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:14px;font-weight:600;margin-bottom:16px">' + e(name) + '</div><audio controls style="width:100%;max-width:500px"><source src="data:' + mime + ';base64,' + b64 + '" type="' + mime + '"></audio></div>';
-                    }
-                })
-                .catch(function(err) {
-                    audFile.close();
-                    renderInfoBox(body, name, size, path);
-                });
-        } else if (cat === 'audio') {
-            var audFile = cockpit.file(fullPath, { superuser: 'try', binary: true });
-            audFile.read()
-                .then(function(data) {
-                    audFile.close();
-                    var ext = name.split('.').pop().toLowerCase();
-                    var mimeMap = { mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', flac: 'audio/flac', aac: 'audio/aac', m4a: 'audio/mp4' };
-                    var mime = mimeMap[ext] || 'audio/mpeg';
-                    var bytes = new Uint8Array(data);
-                    var binary = '';
-                    for (var i = 0; i < bytes.length; i++) {
-                        binary += String.fromCharCode(bytes[i]);
-                    }
-                    var b64 = btoa(binary);
-                    body.innerHTML = '<div style="text-align:center;padding:40px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.5" style="width:64px;height:64px;margin:0 auto 20px;display:block;opacity:.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><div style="font-size:14px;font-weight:600;margin-bottom:16px">' + e(name) + '</div><audio controls style="width:100%;max-width:500px"><source src="data:' + mime + ';base64,' + b64 + '" type="' + mime + '"></audio></div>';
-                })
-                .catch(function(err) {
-                    audFile.close();
-                    renderInfoBox(body, name, size, path);
-                });
+            // 音频预览 - 使用 APlayer 播放列表 + 歌词 + 悬浮播放器
+            initAudioPlayer(fullPath, name, path);
+        } else if (cat === 'pdf') {
+            // PDF预览 - 使用 fsread1 channel 流式传输
+            var streamUrl = createCockpitStreamUrl(fullPath, 'application/pdf', size);
+            body.innerHTML = '<iframe src="' + streamUrl + '" style="width:100%;height:100%;min-height:500px;border:none;"></iframe>';
         } else {
-            file.close();
             renderInfoBox(body, name, size, path);
         }
+    }
+
+    // 创建 Cockpit fsread1 channel URL 用于流式传输文件
+    function createCockpitStreamUrl(path, mimeType, size) {
+        var payload = JSON.stringify({
+            payload: 'fsread1',
+            binary: 'raw',
+            path: path,
+            superuser: 'try',
+            max_read_size: size || 0,
+            external: {
+                'content-type': mimeType
+            }
+        });
+        // 使用 encodeURIComponent 处理 Unicode 字符后再 base64 编码
+        var query = window.btoa(encodeURIComponent(payload).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
+        var prefix = (new URL(cockpit.transport.uri('channel/' + cockpit.transport.csrf_token))).pathname;
+        return prefix + '?' + query;
     }
 
     function renderTextPreview(container, text) {
@@ -411,12 +351,16 @@ function formatDate(epoch) {
         var content = e(displayLines.join('\n'));
         var truncMsg = truncated ? '<div style="padding:10px 16px;background:var(--bg-tertiary);color:var(--warning);font-size:12px;text-align:center;border-top:1px solid var(--border-color)">' + t('err_file_too_large') + '</div>' : '';
 
+        // 根据行数位数动态计算行号列宽度，避免行号列过宽
+        var lnDigits = String(displayLines.length).length;
+        var lnWidth = (lnDigits * 0.65 + 1.8) + 'em';
+
         // 使用table布局确保行号与内容对齐
         var rows = '';
         for (var i = 0; i < displayLines.length; i++) {
-            rows += '<tr><td class="ln">' + (i + 1) + '</td><td class="code">' + e(displayLines[i]) + '</td></tr>';
+            rows += '<tr><td class="ln" style="width:' + lnWidth + ';min-width:' + lnWidth + ';max-width:' + lnWidth + '">' + (i + 1) + '</td><td class="code">' + e(displayLines[i]) + '</td></tr>';
         }
-        container.innerHTML = '<div class="preview-text-wrap"><table class="preview-table"><tbody>' + rows + '</tbody></table>' + truncMsg + '</div>';
+        container.innerHTML = '<div class="preview-text-wrap"><table class="preview-table"><colgroup><col style="width:' + lnWidth + '"><col></colgroup><tbody>' + rows + '</tbody></table>' + truncMsg + '</div>';
     }
 
     // 复制预览内容
@@ -528,13 +472,374 @@ function formatDate(epoch) {
             '</div>';
     }
 
+    // 存储播放器实例，关闭时销毁
+    var _dplayerInstance = null;
+    var _aplayerInstance = null;
+    var _audioPlaylist = []; // 播放列表
+    var _audioCurrentIndex = 0; // 当前播放索引
+    var _miniPlayerExpanded = false; // 悬浮播放器是否展开
+    var _miniPlayerMinimized = true; // 悬浮播放器是否收纳（小条状态）
+
+    // 初始化音频播放器 - 直接显示悬浮播放器，无预览弹窗
+    function initAudioPlayer(fullPath, name, path) {
+        var dirPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
+        var fileName = name;
+
+        // 关闭预览窗口
+        document.getElementById('previewOv').classList.remove('show');
+
+        // 扫描同目录音频文件构建播放列表
+        buildAudioPlaylist(dirPath, fileName, function(playlist, currentIndex) {
+            _audioPlaylist = playlist;
+            _audioCurrentIndex = currentIndex;
+
+            // 创建悬浮播放器（左下角，可收纳）
+            createMiniPlayer();
+        });
+    }
+
+    // 创建悬浮播放器（左下角，可收纳展开）
+    function createMiniPlayer() {
+        // 移除旧的
+        var oldMini = document.getElementById('mini-player');
+        if (oldMini) oldMini.remove();
+
+        // 构建音频列表（含封面 - 使用矢量图）
+        var audioList = _audioPlaylist.map(function(item) {
+            return {
+                name: item.name,
+                artist: 'WebDAV',
+                url: item.url,
+                type: 'auto',
+                lrc: item.lrc || '',
+                cover: '' // APlayer 会自动显示默认封面
+            };
+        });
+
+        // 创建收纳状态的小条
+        var miniBar = document.createElement('div');
+        miniBar.id = 'mini-player-bar';
+        miniBar.className = 'mini-player-bar';
+        miniBar.innerHTML = 
+            '<div class="mini-bar-info">' +
+                '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="color:var(--accent)"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' +
+                '<span class="mini-bar-title">' + e(audioList[_audioCurrentIndex].name) + '</span>' +
+            '</div>' +
+            '<div class="mini-bar-controls">' +
+                '<button class="mini-btn" id="mini-prev" title="' + t('btn_prev') + '"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>' +
+                '<button class="mini-btn mini-btn-play" id="mini-play" title="' + t('btn_play_pause') + '"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M8 5v14l11-7z"/></svg></button>' +
+                '<button class="mini-btn" id="mini-next" title="' + t('btn_next') + '"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6z"/></svg></button>' +
+                '<button class="mini-btn mini-btn-expand" id="mini-expand" title="' + t('btn_expand') + '"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>' +
+                '<button class="mini-btn mini-btn-close" id="mini-close" title="' + t('btn_close') + '"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>' +
+            '</div>';
+        document.body.appendChild(miniBar);
+
+        // 创建展开状态的完整播放器
+        var miniPlayer = document.createElement('div');
+        miniPlayer.id = 'mini-player';
+        miniPlayer.className = 'mini-player';
+        miniPlayer.style.display = 'none';
+        miniPlayer.innerHTML = 
+            '<div class="mini-player-header">' +
+                '<span>' + t('music_player') + '</span>' +
+                '<button class="mini-btn" id="mini-collapse" title="' + t('btn_collapse') + '"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>' +
+                '<button class="mini-btn" id="mini-close-expanded" title="' + t('btn_close') + '"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>' +
+            '</div>' +
+            '<div id="mini-aplayer-container"></div>';
+        document.body.appendChild(miniPlayer);
+
+        // 创建 APlayer
+        try {
+            if (_aplayerInstance) {
+                try { _aplayerInstance.destroy(); } catch (e) {}
+            }
+            _aplayerInstance = new APlayer({
+                container: document.getElementById('mini-aplayer-container'),
+                audio: audioList,
+                theme: '#6c5ce7',
+                loop: 'all',
+                order: 'list',
+                preload: 'auto',
+                autoplay: true,
+                mutex: true,
+                listFolded: false,
+                listMaxHeight: '180px',
+                lrcType: audioList.some(function(a) { return a.lrc; }) ? 1 : 0
+            });
+            _aplayerInstance.list.switch(_audioCurrentIndex);
+            _miniPlayerMinimized = true;
+            _miniPlayerExpanded = false;
+        } catch (err) {
+            console.error('APlayer init failed:', err);
+        }
+
+        // 绑定事件
+        bindMiniPlayerEvents();
+
+        // 点击展开播放器外部自动收纳
+        document.addEventListener('click', handleMiniPlayerOutsideClick);
+    }
+
+    // 绑定迷你播放器事件
+    function bindMiniPlayerEvents() {
+        // 收纳状态按钮
+        document.getElementById('mini-play').onclick = function(e) {
+            e.stopPropagation();
+            if (_aplayerInstance) {
+                if (_aplayerInstance.audio.paused) {
+                    _aplayerInstance.play();
+                } else {
+                    _aplayerInstance.pause();
+                }
+                updateMiniPlayButton();
+            }
+        };
+
+        document.getElementById('mini-prev').onclick = function(e) {
+            e.stopPropagation();
+            if (_aplayerInstance) _aplayerInstance.skipBack();
+        };
+
+        document.getElementById('mini-next').onclick = function(e) {
+            e.stopPropagation();
+            if (_aplayerInstance) _aplayerInstance.skipForward();
+        };
+
+        document.getElementById('mini-expand').onclick = function(e) {
+            e.stopPropagation();
+            expandMiniPlayer();
+        };
+
+        document.getElementById('mini-close').onclick = function(e) {
+            e.stopPropagation();
+            closeMiniPlayer();
+        };
+
+        // 展开状态按钮
+        document.getElementById('mini-collapse').onclick = function(e) {
+            e.stopPropagation();
+            collapseMiniPlayer();
+        };
+
+        document.getElementById('mini-close-expanded').onclick = function(e) {
+            e.stopPropagation();
+            closeMiniPlayer();
+        };
+
+        // 点击收纳条展开
+        document.getElementById('mini-player-bar').onclick = function(e) {
+            if (!e.target.closest('.mini-btn')) {
+                expandMiniPlayer();
+            }
+        };
+
+        // 阻止播放器内滚轮事件冒泡和默认行为（让音量调节正常工作）
+        var miniPlayer = document.getElementById('mini-player');
+        if (miniPlayer) {
+            miniPlayer.addEventListener('wheel', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }, { passive: false });
+        }
+
+        // 监听歌曲切换更新标题
+        if (_aplayerInstance) {
+            _aplayerInstance.on('switch', function() {
+                updateMiniBarTitle();
+            });
+            _aplayerInstance.on('play', function() {
+                updateMiniPlayButton();
+            });
+            _aplayerInstance.on('pause', function() {
+                updateMiniPlayButton();
+            });
+        }
+    }
+
+    // 处理点击外部收纳
+    function handleMiniPlayerOutsideClick(e) {
+        if (_miniPlayerExpanded) {
+            var player = document.getElementById('mini-player');
+            var bar = document.getElementById('mini-player-bar');
+            // 如果点击的是播放器或收纳条内部，不触发收纳
+            if (player && player.contains(e.target)) return;
+            if (bar && bar.contains(e.target)) return;
+            collapseMiniPlayer();
+        }
+    }
+
+    // 展开播放器
+    function expandMiniPlayer() {
+        var player = document.getElementById('mini-player');
+        var bar = document.getElementById('mini-player-bar');
+        if (player) {
+            player.style.display = '';
+            _miniPlayerExpanded = true;
+            // 确保滚轮事件不冒泡、不触发页面滚动
+            player.addEventListener('wheel', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }, { passive: false });
+        }
+        if (bar) bar.style.display = 'none';
+        _miniPlayerMinimized = false;
+    }
+
+    // 收纳播放器（显示小条）
+    function collapseMiniPlayer() {
+        var player = document.getElementById('mini-player');
+        var bar = document.getElementById('mini-player-bar');
+        if (player) {
+            player.style.display = 'none';
+            _miniPlayerExpanded = false;
+        }
+        if (bar) bar.style.display = '';
+        _miniPlayerMinimized = true;
+    }
+
+    // 更新收纳条标题
+    function updateMiniBarTitle() {
+        var titleEl = document.querySelector('.mini-bar-title');
+        if (titleEl && _aplayerInstance) {
+            var index = _aplayerInstance.list.index;
+            if (_audioPlaylist[index]) {
+                titleEl.textContent = _audioPlaylist[index].name;
+            }
+        }
+    }
+
+    // 更新播放按钮图标
+    function updateMiniPlayButton() {
+        var btn = document.getElementById('mini-play');
+        if (btn && _aplayerInstance) {
+            if (_aplayerInstance.audio.paused) {
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>';
+            } else {
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+            }
+        }
+    }
+
+    // 关闭悬浮播放器
+    function closeMiniPlayer() {
+        var mini = document.getElementById('mini-player');
+        var bar = document.getElementById('mini-player-bar');
+        if (mini) mini.remove();
+        if (bar) bar.remove();
+        _miniPlayerExpanded = false;
+        _miniPlayerMinimized = true;
+        document.removeEventListener('click', handleMiniPlayerOutsideClick);
+        if (_aplayerInstance) {
+            try { _aplayerInstance.pause(); _aplayerInstance.destroy(); } catch (e) {}
+            _aplayerInstance = null;
+        }
+        _audioPlaylist = [];
+    }
+
+    // 构建音频播放列表 - 扫描同目录所有音频文件
+    function buildAudioPlaylist(dirPath, currentFile, callback) {
+        var audioExts = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'weba'];
+        var mimeMap = { mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', flac: 'audio/flac', aac: 'audio/aac', m4a: 'audio/mp4', wma: 'audio/x-ms-wma', opus: 'audio/opus', weba: 'audio/webm' };
+
+        cockpit.spawn(['ls', '-laL', '--time-style=+%s', dirPath], { superuser: 'try', err: 'message' })
+            .done(function(output) {
+                var lines = output.split('\n').filter(function(line) { return line.trim() && !line.startsWith('total'); });
+                var playlist = [];
+                var currentIndex = 0;
+
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i].trim();
+                    if (!line) continue;
+                    var match = line.match(/^([d\-l])([\w\-]+)\s+\d+\s+\S+\s+\S+\s+(\d+)\s+(\d+)\s+(.+)$/);
+                    if (!match || match[1] === 'd') continue;
+                    var fileName = match[5].trim();
+                    var ext = fileName.split('.').pop().toLowerCase();
+                    if (audioExts.indexOf(ext) === -1) continue;
+
+                    var mime = mimeMap[ext] || 'audio/mpeg';
+                    var filePath = dirPath + '/' + fileName;
+                    var streamUrl = createCockpitStreamUrl(filePath, mime, parseInt(match[3]) || 0);
+
+                    playlist.push({
+                        name: fileName.replace(/\.[^.]+$/, ''),
+                        url: streamUrl,
+                        path: filePath,
+                        lrc: null
+                    });
+
+                    if (fileName === currentFile) currentIndex = playlist.length - 1;
+                }
+
+                // 异步加载每个音频的歌词
+                loadAllLyrics(playlist, function(playlistWithLrc) {
+                    callback(playlistWithLrc, currentIndex);
+                });
+            })
+            .fail(function(err) {
+                // 失败时只播放当前文件
+                var ext = currentFile.split('.').pop().toLowerCase();
+                var mime = mimeMap[ext] || 'audio/mpeg';
+                var streamUrl = createCockpitStreamUrl(dirPath + '/' + currentFile, mime, 0);
+                callback([{
+                    name: currentFile.replace(/\.[^.]+$/, ''),
+                    url: streamUrl,
+                    path: dirPath + '/' + currentFile,
+                    lrc: null
+                }], 0);
+            });
+    }
+
+    // 加载所有音频的歌词
+    function loadAllLyrics(playlist, callback) {
+        var pending = playlist.length;
+        playlist.forEach(function(item, idx) {
+            var lrcPath = item.path.replace(/\.[^.]+$/, '.lrc');
+            loadLyrics(lrcPath, function(lrc) {
+                if (lrc) item.lrc = lrc;
+                pending--;
+                if (pending === 0) callback(playlist);
+            });
+        });
+    }
+
+    // 加载歌词文件
+    function loadLyrics(lrcPath, callback) {
+        cockpit.file(lrcPath, { superuser: 'try' }).read()
+            .then(function(content) {
+                callback(content);
+            })
+            .catch(function() {
+                callback(null);
+            });
+    }
+
     function closePreview() {
         var body = document.getElementById('pvBody');
+
+        // 销毁 DPlayer 实例
+        if (_dplayerInstance) {
+            try {
+                _dplayerInstance.destroy();
+            } catch (e) {}
+            _dplayerInstance = null;
+        }
+
+        // APlayer 悬浮播放器独立于预览窗口，关闭预览不影响播放
+        // 只清理预览窗口内的媒体元素
+
+        // 暂停并清理预览窗口内的媒体元素
         var mediaEls = body.querySelectorAll('video, audio');
         for (var i = 0; i < mediaEls.length; i++) {
-            mediaEls[i].pause();
-            mediaEls[i].src = '';
+            try {
+                mediaEls[i].pause();
+                mediaEls[i].currentTime = 0;
+                mediaEls[i].src = '';
+                mediaEls[i].load();
+            } catch (e) {}
         }
+
+        // 清空预览内容
+        body.innerHTML = '';
         document.getElementById('previewOv').classList.remove('show');
     }
 
@@ -621,6 +926,9 @@ function formatDate(epoch) {
         preview: showPreview,
         download: download,
         closePreview: closePreview,
+        closeMiniPlayer: closeMiniPlayer,
+        expandMiniPlayer: expandMiniPlayer,
+        collapseMiniPlayer: collapseMiniPlayer,
         editPath: editPath,
         viewPath: viewPath,
         copyPreviewContent: copyPreviewContent,

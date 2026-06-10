@@ -2233,3 +2233,172 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* 迷你播放器 - 收纳条（左下角） */
+        .mini-player-bar {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            max-width: 400px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .mini-player-bar:hover {
+            box-shadow: var(--shadow-glow);
+            border-color: var(--accent);
+        }
+        .mini-bar-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+        .mini-bar-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mini-bar-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .mini-btn {
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+        }
+        .mini-btn:hover {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+        .mini-btn-play {
+            background: var(--accent);
+            color: var(--text-inverse);
+        }
+        .mini-btn-play:hover {
+            background: var(--accent-hover);
+        }
+        .mini-btn-close:hover {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+        .mini-btn-expand:hover {
+            background: var(--info-light);
+            color: var(--info);
+        }
+
+        /* 迷你播放器 - 展开状态（左下角） */
+        .mini-player {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            z-index: 9998;
+            width: 380px;
+            max-width: calc(100vw - 40px);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        .mini-player-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .mini-player-header .mini-btn {
+            padding: 4px 8px;
+        }
+
+        /* APlayer 自定义样式 */
+        .mini-player .aplayer {
+            background: transparent;
+        }
+        .mini-player .aplayer-body {
+            display: flex;
+            flex-direction: column;
+        }
+        .mini-player .aplayer-pic {
+            width: 80px;
+            height: 80px;
+            min-width: 80px;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mini-player .aplayer-pic::before {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 40px;
+            background: var(--accent-light);
+            border-radius: 50%;
+        }
+        .mini-player .aplayer-pic::after {
+            content: '';
+            display: block;
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+        .mini-player .aplayer-info {
+            flex: 1;
+            padding: 10px 12px;
+        }
+        .mini-player .aplayer-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .mini-player .aplayer-author {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        .mini-player .aplayer-controller {
+            padding: 8px 12px;
+        }
+        .mini-player .aplayer-bar-wrap {
+            margin: 8px 0;
+        }
+        .mini-player .aplayer-list {
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .mini-player .aplayer-list ol li {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        .mini-player .aplayer-list ol li.aplayer-list-light {
+            background: var(--accent-light);
+            color: var(--accent);
+        }

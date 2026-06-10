@@ -1,6 +1,6 @@
 {
     "version": 0,
-    "package_version": "1.0.1",
+    "package_version": "1.0.10",
     "name": "webdav-manager",
     "requires": {
         "cockpit": "276"
@@ -12,5 +12,5 @@
             "path": "index.html"
         }
     },
-    "content-security-policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' ws: wss:; img-src 'self' data:;"
+    "content-security-policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' ws: wss:; img-src 'self' data:; media-src 'self';"
 }

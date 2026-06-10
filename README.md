@@ -10,7 +10,7 @@ Manage users, rules, TLS, CORS, and file browsing through the Cockpit web consol
 
 ![License](https://img.shields.io/github/license/Omoinemie/cockpit-webdav-manager)
 ![Release](https://img.shields.io/github/v/release/Omoinemie/cockpit-webdav-manager)
-![Cockpit](https://img.shields.io/badge/Cockpit-%3E%3D270-blue)
+![Cockpit](https://img.shields.io/badge/Cockpit-%3E%3E270-blue)
 
 </div>
 
@@ -27,13 +27,19 @@ Manage users, rules, TLS, CORS, and file browsing through the Cockpit web consol
 - 🌍 **CORS** — Fine-grained control over allowed origins, headers, and methods
 - 📋 **Logging** — Log format, colored output, and output targets
 - 📏 **Global Rules** — Path and regex-based access control rules (CRUD permissions)
-- 👥 **User Management** — Add/remove users with per-user directories and permissions
+- 👥 **User Management** — Add/remove users with per-user directories and permissions, configurable random password length
 - 📂 **File Browser** — Browse and preview files served by WebDAV directly in the UI
+  - 🖼️ **Image Preview** — Support for JPG, PNG, GIF, WebP, SVG, BMP, AVIF
+  - 🎬 **Video Preview** — Support for MP4, WebM, OGG, MOV, MKV with DPlayer
+  - 🎵 **Music Player** — Mini player with playlist, lyrics (.lrc), background playback
+  - 📄 **PDF Preview** — View PDF documents inline
+  - 📝 **Text Preview** — Syntax-highlighted code preview with dynamic line number width
 - 📝 **Raw YAML** — Directly view and edit the underlying YAML configuration
 - 🌙 **Dark Mode** — Light / Dark / System theme with customizable accent colors
 - 🌐 **i18n** — English and 简体中文 interface, full internationalization coverage
 - ⚙️ **Service Control** — Start/stop/restart WebDAV service from the UI
 - 🔄 **Auto Update** — Check and install updates from GitHub directly
+- 💾 **Settings Persistence** — All UI settings saved to `/etc/cockpit/webdav-manager/settings.json`
 
 ### Screenshots
 
@@ -66,7 +72,7 @@ git clone https://github.com/Omoinemie/cockpit-webdav-manager.git
 cd cockpit-webdav-manager
 
 # Edit VERSION file to set your version
-echo "0.3.0" > VERSION
+echo "1.0.10" > VERSION
 
 # Build
 chmod +x build-deb.sh
@@ -87,13 +93,21 @@ sudo systemctl restart cockpit
 
 The plugin manages a YAML configuration file (default: `/etc/webdav/config.yaml`). You can set a custom path in **Settings → WebDAV Config Path**.
 
+UI settings are stored in `/etc/cockpit/webdav-manager/settings.json`:
+- Theme (light/dark/system)
+- Language
+- Menu layout
+- Accent color
+- Toast duration
+- Random password length (8-64 characters)
+
 ### Build & Release (CI/CD)
 
 The GitHub Actions workflow supports:
 
 | Input | Description |
 |-------|-------------|
-| `version` | Version number (e.g. `0.3.0`). Leave empty to read from `VERSION` file |
+| `version` | Version number (e.g. `1.0.10`). Leave empty to read from `VERSION` file |
 | `changelog` | Release notes (optional, supports multiple lines) |
 | `create_release` | Whether to publish a GitHub Release (Yes/No) |
 
@@ -120,13 +134,19 @@ Contributions are welcome! Feel free to open issues and pull requests.
 - 🌍 **CORS** — 细粒度控制允许的来源、请求头和方法
 - 📋 **日志** — 日志格式、彩色输出、输出目标配置
 - 📏 **全局规则** — 基于路径和正则的访问控制规则（CRUD 权限）
-- 👥 **用户管理** — 添加/删除用户，支持独立目录和权限配置
+- 👥 **用户管理** — 添加/删除用户，支持独立目录和权限配置，可配置随机密码长度
 - 📂 **文件浏览** — 直接在界面中浏览和预览 WebDAV 服务的文件
+  - 🖼️ **图片预览** — 支持 JPG、PNG、GIF、WebP、SVG、BMP、AVIF
+  - 🎬 **视频预览** — 支持 MP4、WebM、OGG、MOV、MKV，使用 DPlayer 播放器
+  - 🎵 **音乐播放器** — 迷你播放器，支持播放列表、歌词（.lrc）、后台播放、收纳展开
+  - 📄 **PDF 预览** — 内嵌查看 PDF 文档
+  - 📝 **文本预览** — 语法高亮代码预览，动态行号宽度
 - 📝 **原始 YAML** — 直接查看和编辑底层 YAML 配置文件
 - 🌙 **暗色模式** — 亮色/暗色/跟随系统主题，支持自定义强调色
 - 🌐 **国际化** — English 和简体中文界面，完整的国际化覆盖
 - ⚙️ **服务管理** — 在界面中启动/停止/重启 WebDAV 服务
 - 🔄 **自动更新** — 直接从 GitHub 检查并安装更新
+- 💾 **设置持久化** — 所有 UI 设置保存到 `/etc/cockpit/webdav-manager/settings.json`
 
 ### 截图
 
@@ -158,7 +178,7 @@ git clone https://github.com/Omoinemie/cockpit-webdav-manager.git
 cd cockpit-webdav-manager
 
 # 修改 VERSION 文件设置版本号
-echo "0.3.0" > VERSION
+echo "1.0.10" > VERSION
 
 # 构建
 chmod +x build-deb.sh
@@ -179,13 +199,21 @@ sudo systemctl restart cockpit
 
 插件管理一个 YAML 配置文件（默认：`/etc/webdav/config.yaml`），可在 **设置 → WebDAV 配置路径** 中自定义。
 
+UI 设置存储在 `/etc/cockpit/webdav-manager/settings.json`：
+- 主题（亮色/暗色/跟随系统）
+- 语言
+- 菜单布局
+- 强调色
+- Toast 显示时长
+- 随机密码长度（8-64 位）
+
 ### 构建与发布（CI/CD）
 
 GitHub Actions 工作流支持：
 
 | 输入项 | 说明 |
 |--------|------|
-| `version` | 版本号（如 `0.3.0`），留空则读取 `VERSION` 文件 |
+| `version` | 版本号（如 `1.0.10`），留空则读取 `VERSION` 文件 |
 | `changelog` | 更新日志（可选，支持多行） |
 | `create_release` | 是否发布到 GitHub Release（是/否） |
 

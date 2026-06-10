@@ -34,7 +34,13 @@ var ApiBridge = (function() {
     function defaultSettings() {
         return {
             language: 'en',
-            file_root: '/data'
+            file_root: '/data',
+            theme: 'light',
+            menu_layout: 'side',
+            accent_color: '#4f6ef7',
+            sidebar_open: true,
+            toast_duration: 4,
+            pw_length: 24
         };
     }
 

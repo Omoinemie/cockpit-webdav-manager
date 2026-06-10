@@ -167,14 +167,16 @@
 
     // 密码帮助函数
     function genPw(id) {
+        var state = window.__appState;
+        var len = (state && state.pwLength) ? Math.max(8, Math.min(64, state.pwLength)) : 24;
         var c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        var a = new Uint32Array(24);
+        var a = new Uint32Array(len);
         crypto.getRandomValues(a);
         var p = '';
-        for (var i = 0; i < 24; i++) p += c.charAt(a[i] % c.length);
+        for (var i = 0; i < len; i++) p += c.charAt(a[i] % c.length);
         document.getElementById(id).value = p;
         if (window.__appFns && window.__appFns.showToast) {
-            window.__appFns.showToast(t('toast_pw_generated'), 'success');
+            window.__appFns.showToast(t('toast_pw_generated') + ' (' + len + ')', 'success');
         }
     }
 

@@ -275,6 +275,7 @@
         }
 
         document.getElementById('settingToastDuration').value = state.toastDuration;
+        document.getElementById('settingPwLength').value = state.pwLength;
         var swatches = document.querySelectorAll('.color-swatch');
         for (var i = 0; i < swatches.length; i++) {
             swatches[i].classList.toggle('active', swatches[i].dataset.color === state.accentColor);
@@ -292,6 +293,7 @@
             if (s.menu_layout && window.settingsModule) window.settingsModule.setCustomSelectValue('settingMenuLayout', s.menu_layout);
             if (s.accent_color && window.themeModule) window.themeModule.applyAccentColor(s.accent_color);
             if (s.toast_duration) document.getElementById('settingToastDuration').value = s.toast_duration;
+            if (s.pw_length) document.getElementById('settingPwLength').value = s.pw_length;
         }).catch(function() {});
 
         $settingsOverlay.classList.add('show');
@@ -337,6 +339,7 @@
             accent_color: state.accentColor,
             toast_duration: state.toastDuration,
             sidebar_open: state.sidebarOpen,
+            pw_length: state.pwLength,
             file_root: document.getElementById('setFileRoot').value
         };
         ApiBridge.saveSettings(webdavSettings).then(function() {
@@ -361,12 +364,14 @@
         if (window.layoutModule) window.layoutModule.applyMenuLayout('side');
         if (window.themeModule) window.themeModule.applyAccentColor('#6c5ce7');
         state.toastDuration = 4;
+        state.pwLength = 24;
         if (window.settingsModule) {
             window.settingsModule.setCustomSelectValue('settingTheme', 'light');
             window.settingsModule.setCustomSelectValue('settingLang', 'en');
             window.settingsModule.setCustomSelectValue('settingMenuLayout', 'side');
         }
         document.getElementById('settingToastDuration').value = '4';
+        document.getElementById('settingPwLength').value = '24';
         // 重置WebDAV设置 - 从配置文件读取默认值
         ApiBridge.getConfig()
             .then(function(d) {
@@ -377,6 +382,17 @@
                 document.getElementById('setFileRoot').value = '/data';
             });
         if (window.stateModule) window.stateModule.saveSettings();
+        // 保存重置后的设置到 settings.json
+        ApiBridge.saveSettings({
+            language: 'en',
+            theme: 'light',
+            menu_layout: 'side',
+            accent_color: '#6c5ce7',
+            toast_duration: 4,
+            pw_length: 24,
+            sidebar_open: true,
+            file_root: document.getElementById('setFileRoot').value
+        }).catch(function() {});
         // 先清除当前语言，强制switchLang重新加载
         state.currentLang = '';
         if (window.i18n) {
@@ -485,6 +501,29 @@
 
         // 初始化ApiBridge
         await ApiBridge.init();
+
+        // 从服务端 settings.json 加载设置并合并到 state（服务端优先）
+        try {
+            var serverSettings = ApiBridge.getSettings();
+            if (serverSettings.theme) state.currentTheme = serverSettings.theme;
+            if (serverSettings.language) state.currentLang = serverSettings.language;
+            if (serverSettings.menu_layout) state.menuLayout = serverSettings.menu_layout;
+            if (serverSettings.accent_color) state.accentColor = serverSettings.accent_color;
+            if (serverSettings.toast_duration) state.toastDuration = serverSettings.toast_duration;
+            if (serverSettings.pw_length) state.pwLength = serverSettings.pw_length;
+            if (serverSettings.sidebar_open !== undefined) state.sidebarOpen = serverSettings.sidebar_open;
+            // 重新应用服务端设置
+            if (window.themeModule) window.themeModule.applyTheme(state.currentTheme);
+            if (window.themeModule) window.themeModule.applyAccentColor(state.accentColor);
+            $html.lang = state.currentLang;
+            if (window.i18n) {
+                await window.i18n.loadLang(state.currentLang);
+                window.i18n.updateAllI18n();
+            }
+            if (window.layoutModule) window.layoutModule.applyMenuLayout(state.menuLayout);
+        } catch (e) {
+            console.warn('Failed to apply server settings:', e);
+        }
 
         // 初始化事件
         setupPermClick();

@@ -73,6 +73,7 @@
         setCustomSelectValue('settingMenuLayout', state.menuLayout);
         setCustomSelectValue('settingNotifSound', state.notifSound ? 'on' : 'off');
         document.getElementById('settingToastDuration').value = state.toastDuration;
+        document.getElementById('settingPwLength').value = state.pwLength;
         document.querySelectorAll('.color-swatch').forEach(function(el) {
             el.classList.toggle('active', el.dataset.color === state.accentColor);
         });
@@ -98,6 +99,7 @@
         var newLayout = getCustomSelectValue('settingMenuLayout');
         var newNotifSound = getCustomSelectValue('settingNotifSound') === 'on';
         var newToastDuration = parseFloat(document.getElementById('settingToastDuration').value) || 4;
+        var newPwLength = parseInt(document.getElementById('settingPwLength').value) || 24;
 
         var needI18nUpdate = false;
         if (newLang !== state.currentLang) {
@@ -109,6 +111,7 @@
         if (newLayout !== state.menuLayout && window.__appFns.applyMenuLayout) window.__appFns.applyMenuLayout(newLayout);
         state.notifSound = newNotifSound;
         state.toastDuration = Math.max(1, Math.min(15, newToastDuration));
+        state.pwLength = Math.max(8, Math.min(64, newPwLength));
         if (window.__appFns.saveSettings) window.__appFns.saveSettings();
         if (needI18nUpdate && window.i18n) window.i18n.updateAllI18n();
         closeSettings();
@@ -125,11 +128,13 @@
         if (window.__appFns.applyAccentColor) window.__appFns.applyAccentColor('#4f6ef7');
         state.notifSound = true;
         state.toastDuration = 4;
+        state.pwLength = 24;
         setCustomSelectValue('settingTheme', 'light');
         setCustomSelectValue('settingLang', 'zh-CN');
         setCustomSelectValue('settingMenuLayout', 'side');
         setCustomSelectValue('settingNotifSound', 'on');
         document.getElementById('settingToastDuration').value = '4';
+        document.getElementById('settingPwLength').value = '24';
         if (window.__appFns.saveSettings) window.__appFns.saveSettings();
         if (window.i18n) window.i18n.updateAllI18n();
         if (window.__appFns.showToast) window.__appFns.showToast(t('toastSettingsReset'), 'info');

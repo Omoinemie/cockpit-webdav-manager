@@ -84,11 +84,15 @@ var Preview = (function() {
       displayLines = lines.slice(0, MAX_LINES);
       truncated = true;
     }
-    var lineNums = [];
-    for (var i = 0; i < displayLines.length; i++) lineNums.push(i + 1);
-    var content = e(displayLines.join('\n'));
+    // 根据行数位数动态计算行号列宽度
+    var lnDigits = String(displayLines.length).length;
+    var lnWidth = (lnDigits * 0.65 + 1.8) + 'em';
+    var rows = '';
+    for (var i = 0; i < displayLines.length; i++) {
+      rows += '<tr><td class="ln" style="width:' + lnWidth + ';min-width:' + lnWidth + ';max-width:' + lnWidth + '">' + (i + 1) + '</td><td class="code">' + e(displayLines[i]) + '</td></tr>';
+    }
     var truncMsg = truncated ? '<div style="padding:10px 16px;background:var(--bg4);color:var(--orange);font-size:12px;text-align:center;border-top:1px solid var(--border)">' + I18n.t('err_file_too_large') + ' ' + MAX_LINES + ' ' + I18n.t('lines_shown') + ' (' + lineCount + ' ' + I18n.t('lines_total') + ')</div>' : '';
-    container.innerHTML = '<div class="preview-text-wrap"><div class="preview-code"><div class="preview-ln">' + lineNums.join('\n') + '</div><div class="preview-cc">' + content + '</div></div>' + truncMsg + '</div>';
+    container.innerHTML = '<div class="preview-text-wrap"><table class="preview-table"><colgroup><col style="width:' + lnWidth + '"><col></colgroup><tbody>' + rows + '</tbody></table>' + truncMsg + '</div>';
   }
 
   function renderInfoBox(body, typeInfo, name, size, path) {
